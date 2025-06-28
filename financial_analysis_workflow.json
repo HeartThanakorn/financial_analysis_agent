@@ -1,0 +1,441 @@
+{
+  "name": "financial_analysis_workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.category }}\n\n{{ $json.hint }}\n",
+        "options": {
+          "systemMessage": "={{ $json.role }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -4,
+        0
+      ],
+      "id": "76c6deef-52c9-4377-a0b6-ae3ff6be9b28",
+      "name": "T1 answerer"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "\"You are a financial analysis agent built to deliver accurate, ethical, and concise financial predictions.\nFollow these immutable rules:\n1. Predict ONLY \"Rise\" or \"Fall\" for next-day stock movement.\n2. Output format must be EXACTLY a JSON object with two fields: \"answer\" and \"raw_output\".\n    ```json\n    {\n    \"answer\": \"X\",\n    \"raw_output\": \"Your detailed reasoning based on technical analysis of the provided stock time-series data.\"\n    }\n    ```\n    Where \"X\" is either \"Rise\" or \"Fall\".\n    – No extra words, punctuation, or line breaks outside the JSON block.\n3. Use ONLY provided data parameters for your analysis and prediction.\n4. Think step-by-step internally. Your reasoning must be clearly and concisely provided in the \"raw_output\" field in 100 words.\n5. Avoid hallucination; if the data for prediction is ambiguous, state any underlying assumptions made in the \"raw_output\" field.\n6. Thai or English questions → always respond in English.\n7. Avoid hallucination; if information is ambiguous, choose the most conservative compliant answer.\n\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -4,
+        550
+      ],
+      "id": "593827dc-c327-4ba8-be8d-fd1c50f32abb",
+      "name": "T2 prediction"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=\"You are a CFA classification agent. Your SOLE and ONLY purpose is to categorize a given question into one of the provided categories.\n**You MUST NOT answer the question itself under any circumstances.** Your entire task is limited to classification.\n\nCategorize the question provided in {{ $json.query }} into exactly one of the 11 categories listed below.\n\n**List of Categories:**\n1. Ethical and Professional Standards (Category code: Ethics)\n   - Code of Ethics, Standards of Professional Conduct, professional integrity\n   - Professional responsibilities, ethical decision-making, client interests\n\n2. Quantitative Methods (Category code: QuantMeth)\n   - Statistical analysis, probability theory, hypothesis testing\n   - Time value of money, financial mathematics, regression analysis\n\n3. Economic Analysis and Market Forces (Category code: Economics)\n   - Microeconomics: supply, demand, market structures\n   - Macroeconomics: GDP, inflation, monetary policy, economic cycles\n\n4. Financial Reporting and Analysis (Category code: FinancialReporting)\n   - Financial statements, accounting standards, ratio analysis\n   - Balance sheets, income statements, cash flow analysis\n\n5. Corporate Finance and Issuers (Category code: CorpIssuers)\n   - Capital structure, dividend policy, corporate governance\n   - Mergers & acquisitions, capital budgeting, risk management\n\n6. Equity Investments (Category code: EquityInvest)\n   - Stock valuation, equity markets, company analysis\n   - Market efficiency, equity portfolio management\n\n7. Fixed Income Investments (Category code: FixedIncome)\n   - Bond markets, yield curves, duration analysis\n   - Credit analysis, fixed income portfolio management\n\n8. Derivative Instruments (Category code: Derivatives)\n   - Options, futures, forwards, swaps\n   - Hedging strategies, derivative pricing, risk management\n\n9. Alternative Investments (Category code: AlterInvest)\n   - Real estate, private equity, hedge funds\n   - Commodities, structured products, crypto assets\n\n10. Portfolio Management (Category code: PortManage)\n    - Asset allocation, portfolio construction, rebalancing\n    - Risk management, performance measurement, client objectives\n\n11. Unclassified (Category code: Unclassified)\n    - This category is for questions that are clearly not related to the CFA curriculum, financial analysis, or do not fit any of the above 10 categories. Use this for general knowledge, non-financial topics, or ambiguous/irrelevant queries.\n\nYour response MUST be ONLY the single most appropriate Category Code.\nAbsolutely no other text, punctuation, or line breaks should be included.\nFor example:\nEthics\nQuantMeth\nUnclassified\n(Only the category code on a single line, no other characters.)\n\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        225
+      ],
+      "id": "9d11d5ff-470b-4738-8230-c3cc9bba02e4",
+      "name": "T1 Classifier"
+    },
+    {
+      "parameters": {
+        "jsCode": "function main() {\n    // Dictionary mapping categoryCode to category and hint\n    const categoryDict = {\n        \"Economics\": {\n            category: \"Economic Analysis and Market Forces\",\n            hint: `mermaid\ngraph TD;\nA[Step 1: Question Breakdown] -->|Extract key terms| A1{Identify Topic}\nA1 -->|Micro: Supply & Demand, Market Structures| A2\nA1 -->|Macro: GDP, Growth, Policy, Trade| A3\nA1 -->|Currency & Regulation| A4\nA2 --> B1[Identify model: Elasticity, Cost Curves, Shutdown Points]\nA3 --> B2[Map to AD-AS, Business Cycles, Growth Theories]\nA4 --> B3[Assess Exchange Rates, Trade, Capital Flows, Regulation]\nB1 -->|Check for formula or concept?| C{Numerical or Conceptual}\nB2 --> C\nB3 --> C\nC -->|Numerical| D1[Extract data, apply formulas, check assumptions]\nC -->|Conceptual| D2[Analyze cause-effect, policy impact]\nD1 --> E[Step 4: Solution Development]\nD2 --> E\nE -->|Construct structured response| E1(Core insight + economic rationale)\nE -->|Consider alternative scenarios| E2(Assess different possibilities)\nE1 --> F[Step 5: Answer Validation]\nE2 --> F\nF -->|Check logic, principles, and assumptions| F1(Verify consistency)\nF1 -->|Ensure completeness & clarity| F2(Confirm answer structure)`\n        },\n        \"FixedIncome\": {\n            category: \"Fixed Income Investments\",\n            hint: `mermaid\ngraph TD\nA[Purpose and Scope] --> B3[Analyze Macro Conditions]\nB --> C[Assess Bond Features]\nC --> D[Risk and Yield Analysis]\nD --> E[Develop Recommendations]\nE --> F[Review Performance]\n%% Notes and detailed steps\nA --> |Set objectives| B\nB --> |Review interest rates and inflation| C\nC --> |Focus on duration, spread| D\nD --> |Assess scenarios| E`\n        },\n        \"QuantMeth\": {\n            category: \"Quantitative Methods\",\n            hint: `mermaid\ngraph TD\nA[\"Articulating Purpose and Context\"] --> B[\"Collecting Input Data\"]\nB --> C[\"Processing and Cleaning Data\"]\nC --> D[\"Selecting Quantitative Models and Tools\"]\nD --> E[\"Estimating Parameters and Testing Hypotheses\"]\nE --> F[\"Interpreting Results and Communicating Findings\"]\nF --> G[\"Monitoring and Model Reassessment\"]`\n        },\n        \"EquityInvest\": {\n            category: \"Equity Investments\",\n            hint: `mermaid\ngraph TD\nA[Objective Setting] --> B[Market and Sector Insights]\nB --> C[Industry Competitive Analysis]\nC --> D[Company Review]\nD --> E[Valuation and Risks]\nE --> F[Investment Decision]\n%% Step-specific highlights\nB --> |Look at growth patterns| C\nC --> |Evaluate competitors' positions| D\nD --> |Check financial health| E\nE --> |Combine insights into strategy| F`\n        },\n        \"PortManage\": {\n            category: \"Portfolio Management\",\n            hint: `mermaid\ngraph TD\nA[\"Define Investment Objectives\"] --> B[\"Establish Investment Constraints\"]\nB --> C[\"Develop Strategic Asset Allocation\"]\nC --> D[\"Incorporate Tactical Adjustments\"]\nD --> E[\"Select and Optimize Securities\"]\nE --> F[\"Execute Implementation and Trading\"]\nF --> G[\"Measure Performance and Attribution\"]\nG --> H[\"Monitor Risk and Compliance\"]\nH --> I[\"Rebalance and Adjust Portfolio\"]`\n        },\n        \"Derivatives\": {\n            category: \"Derivative Instruments\",\n            hint: `mermaid\ngraph TD\nA[Define Objective and Context] --> B[Identify Derivative Instrument]\nB --> C[Understand Contract Specifications]\nC --> D[Gather Market Data]\nD --> E[Apply Valuation Models]\nE --> F[Assess Risks: Market, Counterparty, etc.]\nF --> G[Construct Payoff Diagrams or Strategies]\nG --> H[Interpret Results and Make Recommendations]\nH --> I[Review, Monitor, and Adjust Strategies]\n%% Example labels or notes (optional)\nA --> |Hedging, speculation, arbitrage| B\nC --> |Features like notional amount, expiration| D\nD --> |Market prices, volatility, risk-free rates| E\nF --> |Sensitivity to Greeks: Delta, Gamma, Vega, etc.| G\nH --> |Adjust based on changing market conditions| I`\n        },\n        \"FinancialReporting\": {\n            category: \"Financial Reporting and Analysis\",\n            hint: `mermaid\ngraph TD\nA[Articulating Purpose and Context] --> B[Collecting Input Data]\nB --> C[Processing Data]\nC --> D[Analyzing and Interpreting Processed Data]\nD --> E[Developing and Communicating Conclusions]\nE --> F[Doing Follow-Up]\nA --> |Defines goals, tools, and audience| B\nB --> |Gather data on economy and industry| C\nC --> |Use tools like ratios and charts| D\nD --> |Interpret data for conclusions| E\nF --> |Periodic review and iteration| A`\n        },\n        \"AlterInvest\": {\n            category: \"Alternative Investments\",\n            hint: `mermaid\ngraph TD\nA[\"Define Investment Objectives and Mandate\"] --> B[\"Identify Alternative Asset Classes\"]\nB --> C[\"Conduct Manager and Strategy Due Diligence\"]\nC --> D[\"Perform Valuation and Pricing Analysis\"]\nD --> E[\"Assess Risk and Liquidity\"]\nE --> F[\"Allocate Alternatives in Portfolio\"]\nF --> G[\"Monitor Performance and Rebalance\"]`\n        },\n        \"CorpIssuers\": {\n            category: \"Corporate Finance and Issuers\",\n            hint: `mermaid\ngraph TD\nA[\"Corporate Issuer Overview\"] --> B[\"Industry Classification\"]\nB --> C[\"Sector Trends and Competitive Landscape\"]\nA --> D[\"Financial Statement Analysis\"]\nD --> E[\"Profitability, Liquidity, Leverage\"]\nA --> F[\"Credit Risk Assessment\"]\nF --> G[\"Rating Agencies and Default Probabilities\"]\nA --> H[\"Capital Structure and Issuance History\"]\nH --> I[\"Bond Issuances and Debt Maturities\"]\nA --> J[\"Corporate Governance and Management\"]\nJ --> K[\"Board Quality and Managerial Competence\"]\nA --> L[\"Valuation and Investment Analysis\"]\nL --> M[\"DCF, Relative Valuation, Multiples\"]`\n        },\n        \"Ethics\": {\n            category: \"Ethical and Professional Standards\",\n            hint: `mermaid\ngraph TD\nA[Step 1: Scenario Breakdown] --> B{Identify Ethical Domain}\nB --> B1[Professionalism & Integrity]\nB --> B2[Duties to Clients]\nB --> B3[Duties to Employers]\nB --> B4[Conflicts of Interest]\nB --> B5[Investment Process & Duties]\nB --> B6[Responsibilities as CFA Member]\n\nB1 --> C[Check for Code & Standards Violations]\nB2 --> C\nB3 --> C\nB4 --> C\nB5 --> C\nB6 --> C\n\nC --> D{Nature of Issue}\nD --> D1[Misrepresentation, Misconduct, Confidentiality]\nD --> D2[Fair Dealing, Suitability, Loyalty]\nD --> D3[Compliance, Independence, Oversight]\n\nD --> E[Step 2: Ethical Reasoning]\nE --> F1[Apply relevant Standard of Conduct]\nE --> F2[Identify stakeholders and impact]\nE --> F3[Consider long-term reputation and fiduciary duties]\n\nF1 --> G[Step 3: Evaluate Options]\nF2 --> G\nF3 --> G\n\nG --> H1[Prioritize ethical action over business gain]\nG --> H2[Select most conservative, integrity-preserving action]\n\nH1 --> I[Step 4: Final Answer Validation]\nH2 --> I\n\nI --> J1[Check consistency with CFA standards]\nI --> J2[Ensure action protects client, market, and integrity]\n`\n        },\n        \"Unclassified\": {\n            category: \"Unclassified\",\n            hint: `mermaid\ngraph TD \nA[Any Question] --> B{Is it a simple fact?}\nB -- Yes --> C[Direct Answer]\nB -- No --> D[Requires Analysis]\nD --> E[General Answer]\n`\n        }\n    };\n\n    // Get input items\n    const allItems = items; // n8n JavaScript Code node uses 'items'\n    const query = $('Classify category').first().json.query\n\n    // Process the single input item\n    if (allItems.length === 0) {\n        return [{ json: { categoryCode: '', category: '', hint: 'error:no_input' } }];\n    }\n\n    // Assume single input as per request\n    const item = allItems[0];\n    let categoryCode = item.json.output || item.json.category || '';\n\n    //replace categoryCode \\n with empty\n    categoryCode = categoryCode.replace(/\\n/g, '');\n\n    // Look up category and hint in dictionary\n    const entry = categoryDict[categoryCode] || { category: 'Unknown', hint: 'error:category_not_found' };\n    const category = entry.category;\n    const hint = entry.hint;\n\n    const CFARole = `You are a financial analysis agent built to deliver accurate, ethical, and concise financial reasoning.\nThe question is \"${query}\".\nFollow these immutable rules:\n1. This problem is categorized in ${category}. Solve the problem with Hints: ${hint}.\n2. Decide on ONE valid answer only: A, B, C, D, E.\n3. Output format must be EXACTLY a JSON object with two fields: \"answer\" and \"raw_output\".\n    \\`\\`\\`json\n    {\n    \"answer\": \"X\",\n    \"raw_output\": \"Your step-by-step reasoning and explanation for the chosen answer.\"\n    }\n    \\`\\`\\`\n    Where \"X\" is the chosen letter (A, B, C, D, or E).\n    – No extra words, punctuation, or line breaks outside the JSON block.\n4. Base every decision on provided data, market sentiment, or recognized compliance frameworks (e.g., BOT/AMLO).\n5. When ethics or regulation applies, prioritize legal obligations, institutional integrity, and transparency.\n6. Think step-by-step internally. Your reasoning must be provided in the \"raw_output\" field in 100 words.\n7. Thai or English questions → always respond in English.\n8. Avoid hallucination; if information is ambiguous, choose the most conservative compliant answer.\n`\n\n const GenericRole = `\"You are a comprehensive analytical agent built to deliver accurate, ethical, and concise reasoning. \nYour primary domain of expertise is financial analysis, but you are capable of addressing general knowledge questions. \nThe question is ${query}.\nFollow these immutable rules:\n1. Solve the problem with the provided information and any relevant general knowledge under Hints: ${hint}.\n2. Decide on ONE valid answer. For multiple-choice questions, choose A, B, C, D, or E. For direct questions, provide a concise direct answer.\n3. Output format must be EXACTLY a JSON object with two fields: \"answer\" and \"raw_output\".\n    \\`\\`\\`json\n    {\n    \"answer\": \"X\",\n    \"raw_output\": \"Your reasoning and explanation for the chosen answer. [Optional: Out-of-domain disclaimer if applicable]\"\n    }\n    \\`\\`\\`\n    Where \"X\" is the chosen multiple-choice letter (A-E) or the concise direct answer for non-MCQs.\n    The \"raw_output\" must contain the detailed reasoning. If the question falls significantly outside your primary domain of financial analysis, the \"raw_output\" should begin with a brief disclaimer like: \"Note: This question is outside my primary expertise. Based on general knowledge, my best assessment is: [reasoning continues here].\"\n    – No extra words, punctuation, or line breaks outside the JSON block.\n4. Base every decision on provided data, general knowledge, established facts, or recognized best practices/compliance frameworks (e.g., industry standards, legal guidelines).\n5. When ethics or regulation applies, prioritize legal obligations, integrity, and transparency.\n6. Think step-by-step internally. Your reasoning must be provided in the \"raw_output\" field in 100 words.\n7. Thai or English questions → always respond in English.\n8. Avoid hallucination; if information is ambiguous, choose the most conservative compliant answer. If you are uncertain due to the out-of-domain nature, explicitly state that uncertainty in \"raw_output\" along with the disclaimer.\n\"`\n    let role\n    if (categoryCode === \"Unclassified\") {\n        role = GenericRole;\n    } else {\n        role = CFARole;\n    }\n\n    // Return single item with categoryCode, category, and hint\n    return [{ json: { categoryCode, category, hint, role } }];\n}\n\nreturn main();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        100
+      ],
+      "id": "db992d7a-f770-4107-8222-44968c67ff5b",
+      "name": "Map Category for hint"
+    },
+    {
+      "parameters": {
+        "jsCode": "const RISEORFALL_WORDS = [\n    'rise or fall', 'ขึ้นหรือลง', 'escalate or deflate', 'grow or shrink', \n    'boost or lower', 'surge or decline', 'upwards or downwards', 'ปรับตัวขึ้นหรือลง', \n    'ปรับตัวสูงขึ้นหรือต่ำลง', 'ขึ้น\"\" หรือ \"\"ลง', 'rise หรือ fall', '\"ขึ้น\" หรือ \"ลง\"'\n];\nconst MULTIPLECHOICE_WORDS = [\n    'options:', 'answer choices:', 'ตัวเลือก', 'choice', 'appropriate among the three options'\n];\n\nfunction classifyQuestionType(query) {\n    const queryLower = query.toLowerCase();\n    if (RISEORFALL_WORDS.some(keyword => queryLower.includes(keyword))) return 'Type#2';\n    if (MULTIPLECHOICE_WORDS.some(keyword => queryLower.includes(keyword))) return 'Type#1';\n    return 'Unknown';\n}\n\nfunction summarizeTrendForAiV6(block) {\n    try {\n        const lines = block.trim().split('\\n').filter(line => line.trim());\n        if (lines.length < 2) return \"error:insufficient_data\";\n        \n        // Get header and data\n        const header = lines[0].split(',').map(col => col.trim());\n        const dataRows = lines.slice(1)\n            .map(line => line.split(',').map(val => val.trim()))\n            .filter(row => row.length === header.length);\n\n        // Find closing price column\n        const closeColIdx = header.findIndex(c => c.toLowerCase().startsWith('close') || c.includes('ปิด'));\n        if (closeColIdx === -1) {\n            return \"close_col:N/A\";\n        }\n\n        // Extract closing prices\n        const closePrices = dataRows.map(row => {\n            const val = parseFloat(row[closeColIdx]);\n            if (isNaN(val)) throw new Error('invalid_close_data');\n            return val;\n        });\n\n        // Calculate percentage changes\n        const changePct = [];\n        for (let i = 1; i < closePrices.length; i++) {\n            const prev = closePrices[i - 1];\n            const curr = closePrices[i];\n            const pct = prev !== 0 ? ((curr - prev) / prev) * 100 : 0.0;\n            changePct.push(Math.round(pct * 100) / 100);\n        }\n\n        // Basic statistics\n        const totalDays = closePrices.length;\n        const avgChange = changePct.length > 0\n            ? Math.round((changePct.reduce((sum, pct) => sum + pct, 0) / changePct.length) * 100) / 100\n            : 0.0;\n        const posDays = changePct.filter(pct => pct > 0).length;\n        const negDays = changePct.filter(pct => pct < 0).length;\n        const last3 = changePct.slice(-3).concat(Array(3 - Math.min(3, changePct.length)).fill(0.0));\n        const trend = last3.reduce((sum, pct) => sum + pct, 0) > 0\n            ? 'upward'\n            : last3.reduce((sum, pct) => sum + pct, 0) < 0\n            ? 'downward'\n            : 'flat';\n\n        // Assemble summary\n        return [\n            `total_days:${totalDays}`,\n            `avg_change_pct:${avgChange}`,\n            `positive_days:${posDays}`,\n            `negative_days:${negDays}`,\n            `last_3_day_change_pct:${JSON.stringify(last3)}`,\n            `trend:${trend}`\n        ].join(' | ');\n    } catch (e) { return `error:${e.message}`; }\n}\n\nfunction extractPromptAndTimeseriesDataV6(query) {\n    if (typeof query !== 'string') {\n        return [null, null];\n    }\n\n    const lines = query.trim().split('\\n');\n    const promptLines = [];\n    const dataLines = [];\n    let inDataBlock = false;\n    let expectedColumns = 0;\n\n    const headerPattern = /(context|บริบท|บริษัทย่อย)\\s*:\\s*(.*)/i;\n    const dateRowPattern = /^\\d{4}-\\d{2}-\\d{2}/;\n\n    for (let line of lines) {\n        const stripped = line.trim();\n        \n        if (!inDataBlock) {\n            const headerMatch = headerPattern.exec(line);\n            if (headerMatch) {\n                inDataBlock = true;\n                const headerLine = headerMatch[2].trim();\n                expectedColumns = headerLine.split(',').filter(col => col.trim()).length;\n                dataLines.push(headerLine);\n            } else {\n                promptLines.push(line);\n            }\n        } else {\n            if (!stripped) continue;\n\n            if (dateRowPattern.test(stripped)) {\n                let values;\n                if (stripped.includes(':')) {\n                    try {\n                        const [datePart, valuePart] = stripped.split(':', 2);\n                        values = [datePart.trim(), ...valuePart.split(',').map(v => v.trim())];\n                    } catch {\n                        continue;\n                    }\n                } else {\n                    values = stripped.split(',').map(v => v.trim());\n                }\n\n                if (values.length === expectedColumns) {\n                    dataLines.push(values.join(', '));\n                } else {\n                    break;\n                }\n            } else {\n                break;\n            }\n        }\n    }\n\n    const prompt = promptLines.join('\\n').trim();\n    const data = dataLines.length > 1 ? dataLines.join('\\n') : null;\n    \n    return [prompt, data];\n}\n\nfunction main() {\n    const item = $json.body.question;\n    let output = [];\n    const query = item;\n    const itemType = classifyQuestionType(query);\n    const itemData = { query: item, type: itemType };\n\n    if (itemType === 'Type#1') {\n        output.push({ json: itemData });\n    } else if (itemType === 'Type#2') {\n        const [prompt, timeseriesData] = extractPromptAndTimeseriesDataV6(query);\n        if (prompt && timeseriesData) {\n            const summary = summarizeTrendForAiV6(timeseriesData);\n            itemData.query = `${prompt}\\n\\n${summary}`;\n            output.push({ json: itemData });\n        }\n    }\n    return output;\n}\n\nreturn main();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1480,
+        300
+      ],
+      "id": "dc8106ef-9af1-4284-b57f-ce8106965306",
+      "name": "Classifier (T1,T2)"
+    },
+    {
+      "parameters": {
+        "model": "scb10x/llama3.1-typhoon2-8b-instruct:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        445
+      ],
+      "id": "cb5fd1a2-d5c9-4370-bede-b1176a84e510",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "sYBht9yaOVtmc2MR",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "scb10x/llama3.1-typhoon2-8b-instruct:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        84,
+        220
+      ],
+      "id": "69aa8765-a725-446a-956a-a673cac7a6c9",
+      "name": "Ollama Chat Model1",
+      "credentials": {
+        "ollamaApi": {
+          "id": "sYBht9yaOVtmc2MR",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "scb10x/llama3.1-typhoon2-8b-instruct:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        84,
+        770
+      ],
+      "id": "15463858-2135-493b-8c60-4b0b1e5bff1b",
+      "name": "Ollama Chat Model2",
+      "credentials": {
+        "ollamaApi": {
+          "id": "sYBht9yaOVtmc2MR",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "httpMethod": [
+          "POST"
+        ],
+        "path": "eval",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1700,
+        300
+      ],
+      "id": "4322801a-61c1-43ee-b15b-f1510f9e660e",
+      "name": "Webhook",
+      "webhookId": "41790b1e-97f8-44d2-86b5-e9d7d056576f"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"answer\": \"{{ $json.ans }}\",\n    \"raw_output\": \"{{ $json.raw }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        592,
+        300
+      ],
+      "id": "2f77f3ff-6ace-4c96-ae11-7b864c1e74b1",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "function main() {\n    // Define keywords for each category\n    const keywords = {\n        'Derivatives': [\n            'options', 'futures', 'forwards', 'swaps', 'hedging', 'derivative',\n            'ตราสารอนุพันธ์', 'ออปชั่น', 'ฟิวเจอร์ส', 'สัญญาซื้อขายล่วงหน้า', 'การป้องกันความเสี่ยง'\n        ],\n        'FixedIncome': [\n            'bond', 'yield curve', 'duration', 'credit analysis', 'fixed income',\n            'พันธบัตร', 'ตราสารหนี้', 'อัตราผลตอบแทนพันธบัตร', 'การวิเคราะห์เครดิต'\n        ],\n        'AlterInvest': [\n            'real estate', 'private equity', 'hedge funds', 'commodities',\n            'structured products', 'crypto assets', 'alternative investment', 'venture capital',\n            'อสังหาริมทรัพย์', 'กองทุนส่วนบุคคล', 'สินค้าโภคภัณฑ์', 'สินทรัพย์ทางเลือก', 'คริปโตเคอร์เรนซี'\n        ],\n        'EquityInvest': [\n            'stock', 'equity', 'valuation', 'equity markets', 'company analysis',\n            'market efficiency', 'หุ้น', 'การประเมินมูลค่าหุ้น', 'ตลาดหุ้น', 'ตราสารทุน'\n        ],\n        'CorpIssuers': [\n            'capital structure', 'dividend policy', 'corporate governance',\n            'mergers & acquisitions', 'capital budgeting', 'corporate finance', 'issuer',\n            'การควบรวมกิจการ', 'โครงสร้างเงินทุน', 'นโยบายเงินปันผล', 'บรรษัทภิบาล',\n            'การจัดทำงบประมาณลงทุน', 'การเงินองค์กร'\n        ],\n        'PortManage': [\n            'asset management', 'mutual fund', 'portfolio', 'investment',\n            'risk management', 'return', 'asset allocation', 'portfolio construction',\n            'rebalancing', 'performance measurement', 'สินทรัพย์', 'กองทุน',\n            'การลงทุน', 'ผลตอบแทน', 'ความเสี่ยง', 'การจัดการพอร์ต', 'การจัดสรรสินทรัพย์',\n            'กองทุนรวม', 'การวัดผลการดำเนินงาน'\n        ],\n        'FinancialReporting': [\n            'audit', 'internal controls', 'financial statements', 'balance sheet',\n            'income statement', 'cash flow', 'accounting', 'auditing', 'IFRS', 'GAAP',\n            'ตรวจสอบ', 'งบการเงิน', 'บัญชี', 'งบดุล', 'งบกำไรขาดทุน', 'งบกระแสเงินสด',\n            'return on total assets', 'net profit margin', 'inventory', 'การตรวจสอบบัญชี',\n            'มาตรฐานการบัญชี', 'อัตราส่วนทางการเงิน', 'การเงินและการบัญชี', 'ต้นทุน',\n            'การวิเคราะห์งบการเงิน'\n        ],\n        'QuantMeth': [\n            'population', 'sampling', 'regression', 'statistics', 'สูตร', 'สถิติ',\n            'mathematics', 'calculation', 'คำนวณ', 'ตัวเลข', 'data analysis', 'ข้อมูล',\n            'การวิเคราะห์', 'Johansen', 'VAR', 'OLS estimator', 'confidence interval',\n            'forecast accuracy', 'parameters', 'eigenvalue', 'unbiasedness', 'efficiency',\n            'variance', 'covariance', 'สมการ', 'ทดสอบ', 'ความน่าจะเป็น', 'สมมติฐาน',\n            'อนุกรมเวลา', 'การถดถอย', 'การคาดการณ์', 'time value of money', 'TVM',\n            'hypothesis testing', 'probability'\n        ],\n        'Economics': [\n            'GDP', 'monetary policy', 'fiscal policy', 'inflation', 'unemployment',\n            'economic growth', 'interest rates', 'aggregate demand', 'supply', 'market',\n            'exchange rate', 'ต้นทุนส่วนเพิ่ม', 'ต้นทุนผันแปร', 'กำไรสูงสุด', 'อุปทาน', 'อุปสงค์',\n            'Say\\'s Law', 'Say\\'s', 'marginal cost', 'profit maximization', 'equilibrium',\n            'เศรษฐกิจ', 'นโยบายการเงิน', 'นโยบายการคลัง', 'microeconomics', 'macroeconomics',\n            'price discrimination', 'production possibilities frontier', 'national income',\n            'government spending', 'equation of exchange', 'monetarist', 'ธนาคารกลาง',\n            'ทุนนิยม', 'อุตสาหกรรม', 'อัตราดอกเบี้ย', 'เงินเฟ้อ', 'ภาวะเงินฝืด', 'การเติบโตทางเศรษฐกิจ',\n            'เศรษฐศาสตร์', 'อุปสงค์และอุปทาน', 'ดุลยภาพ'\n        ],\n        'Ethics': [\n            'COSO', 'ethical behavior', 'conflict of interest', 'compliance', 'SEC',\n            'regulations', 'governance', 'fraud', 'whistleblowing', 'misconduct',\n            'integrity', 'transparency', 'กฎระเบียบ', 'จริยธรรม', 'กฎหมาย', 'กฎ',\n            'UN Global Compact', 'การกำกับดูแล', 'การทุจริต', 'ความโปร่งใส', 'จรรยาบรรณ',\n            'การปฏิบัติตามกฎ', 'ผลประโยชน์ทับซ้อน', 'มาตรการทางวินัย', 'บทลงโทษ', 'ความลับลูกค้า',\n            'professional standards'\n        ],\n        'Unclassified': [\n            'McDonald\\'s', 'KFC', 'utilitarianism', 'philosophy', 'political leaders',\n            'history', 'art', 'science', 'general knowledge', 'miscellaneous',\n            'ปรัชญา', 'ประวัติศาสตร์', 'ศิลปะ', 'วิทยาศาสตร์', 'ความรู้ทั่วไป', 'who was',\n            'คนดัง', 'สถานที่', 'บุคคลสำคัญ', 'กีฬา', 'วัฒนธรรม', 'บันเทิง', 'สุขภาพ', 'อาหาร'\n        ]\n    };\n\n    // Function to extract question part from query\n    function extractQuestion(query) {\n        const regex = /(?:Question:|คำถาม:)\\s*(.*?)(?=\\s*(?:Answer Choices:|ตัวเลือกคำตอบ:|$))/is;\n        const match = query.match(regex);\n        return match ? match[1].trim() : null;\n    }\n\n    // Function to classify a single question\n    function classifySingleQuestion(question) {\n        if (!question) return 'Unclassified';\n        const questionLower = question.toLowerCase();\n        for (const [category, terms] of Object.entries(keywords)) {\n            if (terms.some(term => questionLower.includes(term))) {\n                return category;\n            }\n        }\n        return 'Unclassified';\n    }\n\n    // Get input items\n    const allItems = items; // n8n JavaScript Code node uses 'items'\n\n    // Process the single input item\n    if (allItems.length === 0) {\n        return [{ json: { category: 'error:no_input' } }];\n    }\n\n    // Assume single input\n    const item = allItems[0];\n    const query = item.json.query || '';\n\n    // Extract and classify question\n    const questionExtracted = extractQuestion(query);\n    const category = classifySingleQuestion(questionExtracted);\n\n    // Return single item with category\n    return [{ json: { category,query  } }];\n}\n\nreturn main();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1040,
+        100
+      ],
+      "id": "f678ab4e-09d3-4062-9ac2-397481352118",
+      "name": "Classify category"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "863cdaf3-b982-46eb-b7c0-6769a7c7fc22",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "Type#1",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1260,
+        300
+      ],
+      "id": "9f492ccb-0f5c-4db0-8bab-271bd39ac58d",
+      "name": "Type 1 or Type 2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9978a27b-40c8-4e38-93a2-b3e157db998e",
+              "leftValue": "={{ $json.category }}",
+              "rightValue": "Unclassified",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -820,
+        100
+      ],
+      "id": "e4813156-7042-442a-8c13-65446f7fb102",
+      "name": "CAT or unclassify"
+    },
+    {
+      "parameters": {
+        "jsCode": "function main() {\n    const allItems = items;\n\n    // Handle no input\n    if (allItems.length === 0) {\n        return [{ json: { category: '', raw: 'error:no_input' } }];\n    }\n\n    // Get the single input item\n    const item = allItems[0];\n    const OutputJson = item.json.output || '';\n\n    // Handle empty or invalid input\n    if (!OutputJson) {\n        return [{ json: { category: '', raw: 'error:empty_output' } }];\n    }\n\n    try {\n        // Clean the input by removing ```json and newlines\n        const cleanedJson = OutputJson.replace(/```json\\n|\\n```/g, '').trim();\n        \n        // Parse the JSON string\n        const entry = JSON.parse(cleanedJson);\n        \n        // Extract answer (as category) and raw_output (as raw)\n        const ans = entry.answer || '';\n        const raw = entry.raw_output || entry.rawOutput || ''; // Handle both snake_case and camelCase\n\n        return [{ json: { ans, raw } }];\n    } catch (error) {\n        // Handle JSON parsing errors\n        return [{ json: { category: '', raw: `error:invalid_json:${error.message}` } }];\n    }\n}\n\nreturn main();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        372,
+        300
+      ],
+      "id": "3de06d76-bb58-4c50-b94f-74c7f40b3d19",
+      "name": "Format output"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "T1 answerer": {
+      "main": [
+        [
+          {
+            "node": "Format output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T2 prediction": {
+      "main": [
+        [
+          {
+            "node": "Format output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T1 Classifier": {
+      "main": [
+        [
+          {
+            "node": "Map Category for hint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classifier (T1,T2)": {
+      "main": [
+        [
+          {
+            "node": "Type 1 or Type 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map Category for hint": {
+      "main": [
+        [
+          {
+            "node": "T1 answerer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "T1 Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "T1 answerer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "T2 prediction",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Classifier (T1,T2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify category": {
+      "main": [
+        [
+          {
+            "node": "CAT or unclassify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Type 1 or Type 2": {
+      "main": [
+        [
+          {
+            "node": "Classify category",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "T2 prediction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CAT or unclassify": {
+      "main": [
+        [
+          {
+            "node": "Map Category for hint",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "T1 Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format output": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3b47bf81-2b4e-47e2-b360-33bad3683cf8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "855e58f2b4ed508a34d1b3f473f25e934ec4e86c934260426fdad4ffcca2bccf"
+  },
+  "id": "1DoqxyjQObEsv9Aq",
+  "tags": []
+}
